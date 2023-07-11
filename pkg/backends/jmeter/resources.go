@@ -56,7 +56,7 @@ var (
 	loadTestWorkerPodLabels = map[string]string{
 		loadTestWorkerPodLabelKey: loadTestWorkerPodLabelValue,
 	}
-	//loadTestSecretLabels is a labels set for created secrets
+	// loadTestSecretLabels is a labels set for created secrets
 	loadTestSecretLabels = map[string]string{
 		loadTestSecretLabelKey: loadTestSecretLabel,
 	}
@@ -203,10 +203,10 @@ func (b *Backend) NewPod(loadTest loadTestV1.LoadTest, i int, configMap *coreV1.
 
 	optionalVolume := true
 
-	imageRef := fmt.Sprintf("%s:%s", loadTest.Spec.WorkerConfig.Image, loadTest.Spec.WorkerConfig.Tag)
-	if loadTest.Spec.WorkerConfig.Image == "" || loadTest.Spec.WorkerConfig.Tag == "" {
-		imageRef = fmt.Sprintf("%s:%s", b.workerConfig.Image, b.workerConfig.Tag)
-		logger.Debug("Loadtest.Spec.WorkerConfig is empty; using worker image from config", zap.String("imageRef", imageRef))
+	imageRef := loadTest.Spec.WorkerConfig
+	if imageRef == "" {
+		imageRef = b.workerConfig
+		logger.Debug("Loadtest.Spec.WorkerConfig is empty; using worker image from config", zap.String("imageRef", string(imageRef)))
 	}
 
 	pod := &coreV1.Pod{
@@ -257,7 +257,7 @@ func (b *Backend) NewPod(loadTest loadTestV1.LoadTest, i int, configMap *coreV1.
 			Containers: []coreV1.Container{
 				{
 					Name:            loadTestWorkerName,
-					Image:           imageRef,
+					Image:           string(imageRef),
 					ImagePullPolicy: "Always",
 					Ports: []coreV1.ContainerPort{
 						{ContainerPort: 1099},
@@ -322,7 +322,8 @@ func (b *Backend) NewPod(loadTest loadTestV1.LoadTest, i int, configMap *coreV1.
 				VolumeSource: coreV1.VolumeSource{
 					EmptyDir: &coreV1.EmptyDirVolumeSource{},
 				},
-			}}...)
+			},
+		}...)
 		pod.Spec.InitContainers = []coreV1.Container{
 			{
 				Name:    "get-data",
@@ -364,10 +365,10 @@ func (b *Backend) NewJMeterMasterJob(loadTest loadTestV1.LoadTest, reportURL str
 
 	var one int32 = 1
 
-	imageRef := fmt.Sprintf("%s:%s", loadTest.Spec.MasterConfig.Image, loadTest.Spec.MasterConfig.Tag)
-	if loadTest.Spec.MasterConfig.Image == "" || loadTest.Spec.MasterConfig.Tag == "" {
-		imageRef = fmt.Sprintf("%s:%s", b.masterConfig.Image, b.masterConfig.Tag)
-		logger.Debug("Loadtest.Spec.MasterConfig is empty; using master image from config", zap.String("imageRef", imageRef))
+	imageRef := loadTest.Spec.MasterConfig
+	if imageRef == "" {
+		imageRef = b.masterConfig
+		logger.Debug("Loadtest.Spec.MasterConfig is empty; using master image from config", zap.String("imageRef", string(imageRef)))
 	}
 
 	jMeterEnvVars := []coreV1.EnvVar{
@@ -416,7 +417,7 @@ func (b *Backend) NewJMeterMasterJob(loadTest loadTestV1.LoadTest, reportURL str
 					Containers: []coreV1.Container{
 						{
 							Name:            loadTestJobName,
-							Image:           imageRef,
+							Image:           string(imageRef),
 							ImagePullPolicy: "Always",
 							Env:             jMeterEnvVars,
 							VolumeMounts: []coreV1.VolumeMount{

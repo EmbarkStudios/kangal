@@ -424,15 +424,15 @@
 					},
 					"envVars": {
 						"type": "string",
-						"format": "file"
+						"format": "binary"
 					},
 					"testData": {
 						"type": "string",
-						"format": "file"
+						"format": "binary"
 					},
 					"testFile": {
 						"type": "string",
-						"format": "file"
+						"format": "binary"
 					},
 					"type": {
 						"$ref": "#/components/schemas/LoadTestType"
