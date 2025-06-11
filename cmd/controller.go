@@ -29,6 +29,7 @@ var reconcileDistribution = []float64{10, 100, 1000, 10000, 30000, 60000}
 type controllerCmdOptions struct {
 	kubeConfig           string
 	masterURL            string
+	namespaceLabels      []string
 	namespaceAnnotations []string
 	podAnnotations       []string
 	nodeSelectors        []string
@@ -113,6 +114,7 @@ func NewControllerCmd() *cobra.Command {
 	flags := cmd.PersistentFlags()
 	flags.StringVar(&opts.kubeConfig, "kubeconfig", "", "(optional) Absolute path to the kubeConfig file. Only required if out-of-cluster.")
 	flags.StringVar(&opts.masterURL, "master-url", "", "The address of the Kubernetes API server. Overrides any value in kubeConfig. Only required if out-of-cluster.")
+	flags.StringSliceVar(&opts.namespaceLabels, "namespace-label", []string{}, "label will be attached to the loadtest namespace")
 	flags.StringSliceVar(&opts.namespaceAnnotations, "namespace-annotation", []string{}, "annotation will be attached to the loadtest namespace")
 	flags.StringSliceVar(&opts.podAnnotations, "pod-annotation", []string{}, "annotation will be attached to the loadtest pods")
 	flags.StringSliceVar(&opts.nodeSelectors, "node-selector", []string{}, "nodeSelector rules will be attached to the loadtest pods")
@@ -126,6 +128,11 @@ func populateCfgFromOpts(cfg controller.Config, opts *controllerCmdOptions) (con
 
 	cfg.MasterURL = opts.masterURL
 	cfg.KubeConfig = opts.kubeConfig
+
+	cfg.NamespaceLabels, err = convertKeyPairStringToMap(opts.namespaceLabels)
+	if err != nil {
+		return controller.Config{}, fmt.Errorf("failed to convert namepsace labels: %w", err)
+	}
 
 	cfg.NamespaceAnnotations, err = convertKeyPairStringToMap(opts.namespaceAnnotations)
 	if err != nil {
