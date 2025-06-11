@@ -27,6 +27,7 @@ type Config struct {
 
 	MasterURL            string
 	KubeConfig           string
+	NamespaceLabels      map[string]string
 	NamespaceAnnotations map[string]string
 	PodAnnotations       map[string]string
 	NodeSelectors        map[string]string

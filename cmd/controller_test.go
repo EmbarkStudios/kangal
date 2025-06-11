@@ -13,6 +13,7 @@ func TestControllerPopulateCfgFromOpts(t *testing.T) {
 	type fields struct {
 		kubeConfig           string
 		masterURL            string
+		namespaceLabels      []string
 		namespaceAnnotations []string
 		podAnnotations       []string
 		nodeSelectors        []string
@@ -27,6 +28,7 @@ func TestControllerPopulateCfgFromOpts(t *testing.T) {
 			name:   "test with empty annotations",
 			fields: fields{},
 			want: controller.Config{
+				NamespaceLabels:      map[string]string{},
 				NamespaceAnnotations: map[string]string{},
 				PodAnnotations:       map[string]string{},
 				NodeSelectors:        map[string]string{},
@@ -40,8 +42,22 @@ func TestControllerPopulateCfgFromOpts(t *testing.T) {
 				podAnnotations:       []string{"iam.amazonaws.com/role:arn:aws:iam::someid:role/some-role-name"},
 			},
 			want: controller.Config{
+				NamespaceLabels:      map[string]string{},
 				NamespaceAnnotations: map[string]string{"iam.amazonaws.com/permitted": ".*"},
 				PodAnnotations:       map[string]string{"iam.amazonaws.com/role": "arn:aws:iam::someid:role/some-role-name"},
+				NodeSelectors:        map[string]string{},
+				Tolerations:          []kubernetes.Toleration{},
+			},
+		},
+		{
+			name: "test with computeclass labels",
+			fields: fields{
+				namespaceLabels: []string{"cloud.google.com/default-compute-class:cost-optimized-spot"},
+			},
+			want: controller.Config{
+				NamespaceLabels:      map[string]string{"cloud.google.com/default-compute-class": "cost-optimized-spot"},
+				NamespaceAnnotations: map[string]string{},
+				PodAnnotations:       map[string]string{},
 				NodeSelectors:        map[string]string{},
 				Tolerations:          []kubernetes.Toleration{},
 			},
@@ -52,6 +68,7 @@ func TestControllerPopulateCfgFromOpts(t *testing.T) {
 				nodeSelectors: []string{`nodelabel:"test"`},
 			},
 			want: controller.Config{
+				NamespaceLabels:      map[string]string{},
 				NamespaceAnnotations: map[string]string{},
 				PodAnnotations:       map[string]string{},
 				NodeSelectors:        map[string]string{"nodelabel": "test"},
@@ -64,6 +81,7 @@ func TestControllerPopulateCfgFromOpts(t *testing.T) {
 				tolerations: []string{"key1:value1:Equal:NoSchedule", "key2:value2:Equal:NoSchedule"},
 			},
 			want: controller.Config{
+				NamespaceLabels:      map[string]string{},
 				NamespaceAnnotations: map[string]string{},
 				PodAnnotations:       map[string]string{},
 				NodeSelectors:        map[string]string{},
@@ -90,6 +108,7 @@ func TestControllerPopulateCfgFromOpts(t *testing.T) {
 				podAnnotations:       []string{`iam.amazonaws.com/role:arn:aws:iam::"someid:role/some-role-name"`},
 			},
 			want: controller.Config{
+				NamespaceLabels:      map[string]string{},
 				NamespaceAnnotations: map[string]string{"iam.amazonaws.com/permitted": ".*"},
 				PodAnnotations:       map[string]string{"iam.amazonaws.com/role": "arn:aws:iam::someid:role/some-role-name"},
 				NodeSelectors:        map[string]string{},
@@ -102,6 +121,7 @@ func TestControllerPopulateCfgFromOpts(t *testing.T) {
 			opts := &controllerCmdOptions{
 				kubeConfig:           tt.fields.kubeConfig,
 				masterURL:            tt.fields.masterURL,
+				namespaceLabels:      tt.fields.namespaceLabels,
 				namespaceAnnotations: tt.fields.namespaceAnnotations,
 				podAnnotations:       tt.fields.podAnnotations,
 				nodeSelectors:        tt.fields.nodeSelectors,

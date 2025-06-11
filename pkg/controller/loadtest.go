@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"maps"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -498,7 +499,7 @@ func (c *Controller) checkOrCreateNamespace(ctx context.Context, loadtest *loadT
 
 	namespaceName := ""
 	if len(namespaces.Items) == 0 {
-		newNamespace, err := newNamespace(loadtest, c.cfg.NamespaceAnnotations)
+		newNamespace, err := newNamespace(loadtest, c.cfg.NamespaceLabels, c.cfg.NamespaceAnnotations)
 		if err != nil {
 			return err
 		}
@@ -517,11 +518,10 @@ func (c *Controller) checkOrCreateNamespace(ctx context.Context, loadtest *loadT
 }
 
 // newNamespace creates a new namespaces object with a random name
-func newNamespace(loadtest *loadTestV1.LoadTest, namespaceAnnotations map[string]string) (*coreV1.Namespace, error) {
-	labels := map[string]string{
-		"app":        "kangal",
-		"controller": loadtest.Name,
-	}
+func newNamespace(loadtest *loadTestV1.LoadTest, namespacelabels map[string]string, namespaceAnnotations map[string]string) (*coreV1.Namespace, error) {
+	labels := maps.Clone(namespacelabels)
+	labels["controller"] = loadtest.Name
+	labels["app"] = "kangal"
 
 	return &coreV1.Namespace{
 		ObjectMeta: metaV1.ObjectMeta{
